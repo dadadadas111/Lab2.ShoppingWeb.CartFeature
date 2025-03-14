@@ -1,0 +1,46 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+<h1>Login</h1>
+@if (ViewBag.Error != null)
+{
+    <p style="color: red">@ViewBag.Error</p>
+}
+<button onclick="signInWithFirebase()">Login with Google</button>
+
+<!-- Firebase SDK (Use module-based imports) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+    // Firebase config
+    const firebaseConfig = {
+        apiKey: "AIzaSyBgC99_9xkOO3yDrOrYuIA7ptv_soCBkOI",
+        authDomain: "prn222-lab2.firebaseapp.com",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // Attach function to global scope
+    window.signInWithFirebase = function () {
+        signInWithPopup(auth, provider).then(async (result) => {
+            const idToken = await result.user.getIdToken();
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/Auth/Login";
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "idToken";
+            input.value = idToken;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }).catch(error => {
+            console.error("Login failed:", error);
+        });
+    };
+</script>
+
