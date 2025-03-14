@@ -63,6 +63,8 @@ app.UseAuthorization();
 
 app.UseMiddleware<FirebaseAuthMiddleware>();
 
+app.UseStatusCodePagesWithReExecute("/Home/CustomNotFound");
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

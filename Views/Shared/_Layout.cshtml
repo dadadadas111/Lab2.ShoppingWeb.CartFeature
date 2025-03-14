@@ -8,19 +8,36 @@
     @* <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> *@
     @* <link rel="stylesheet" href="~/Lab2.ShoppingWeb.CartFeature.styles.css" asp-append-version="true" /> *@
     <link rel="stylesheet" href="https://matcha.mizu.sh/matcha.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body class="layout-simple">
-    <header>
+    <header class="navbar"
+            style="padding-bottom: 15px">
         <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Lab2</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+
+        <div class="nav-actions">
+            <a asp-controller="Cart" asp-action="Index" class="cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span id="cart-count" class="cart-badge">0</span>
+            </a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <form asp-controller="Auth" asp-action="Logout" method="post" class="auth-btn">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            }
+            else
+            {
+                <div class="auth-btn">
+                    <button onclick="signInWithFirebase()" class="btn btn-primary">Login</button>
+                </div>
+            }
+        </div>
     </header>
     <aside data-expandable>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav>
             <div class="container-fluid">
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <div>
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="@Url.Action("Index", "Home")">Home</a>
@@ -58,9 +75,140 @@
             &copy; 2025 - Lab2.ShoppingWeb - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </p>
     </footer>
+    <style>
+        input[type="checkbox"] {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #333;
+            color: white;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            color: white;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .cart-btn {
+            position: relative;
+            font-size: 1.5rem;
+            color: white;
+            text-decoration: none;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background: red;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 50%;
+        }
+
+        .auth-btn .btn {
+            padding: 8px 15px;
+            font-size: 1rem;
+        }
+        
+        .auth-btn {
+            padding: 1rem;
+            margin: 0 auto 1rem;
+            background: transparent;
+        }
+    </style>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!--Script to update cart item number-->
+    <script>
+        function updateCartCount() {
+            console.log("Updating cart count...");
+            let cart = JSON.parse(localStorage.getItem("cart")) || [];
+            let totalItems = cart.length;
+            document.getElementById("cart-count").innerText = totalItems;
+            fetch("/Cart/get")
+            .then(response => response.json())
+            .then(data => {
+                console.log("Redis cart:", data);
+                totalItems += data.length;
+                document.getElementById("cart-count").innerText = totalItems;
+            });
+        }
+        // Update cart count on page load
+        document.addEventListener("DOMContentLoaded", updateCartCount);
+
+        // Listen for cart updates
+        window.addEventListener("storage", updateCartCount);
+    </script>
+
+    <!-- Firebase SDK (Use module-based imports) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBgC99_9xkOO3yDrOrYuIA7ptv_soCBkOI",
+            authDomain: "prn222-lab2.firebaseapp.com",
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Attach function to global scope
+        window.signInWithFirebase = function () {
+            signInWithPopup(auth, provider).then(async (result) => {
+                const idToken = await result.user.getIdToken();
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = "/Auth/Login";
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "idToken";
+                input.value = idToken;
+                form.appendChild(input);
+
+                // Preserve ReturnUrl if present
+                const urlParams = new URLSearchParams(window.location.search);
+                const returnUrl = urlParams.get("ReturnUrl");
+                if (returnUrl) {
+                    const returnInput = document.createElement("input");
+                    returnInput.type = "hidden";
+                    returnInput.name = "returnUrl";
+                    returnInput.value = returnUrl;
+                    form.appendChild(returnInput);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }).catch(error => {
+                console.error("Login failed:", error);
+            });
+        };
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

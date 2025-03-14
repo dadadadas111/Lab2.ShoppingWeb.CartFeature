@@ -1,0 +1,275 @@
+﻿@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    ViewBag.Title = "Shopping Cart";
+}
+
+<h1>Shopping Cart</h1>
+
+<div class="cart-container">
+    <!-- Local Cart -->
+    <div class="cart-section">
+        <h3>Local Cart</h3>
+        <p id="local-empty" class="empty-message" style="display: none;">Your local cart is empty.</p>
+        <ul id="local-cart" class="cart-list" ondrop="drop(event, 'local')" ondragover="allowDrop(event)"></ul>
+    </div>
+
+    @if (isAuthenticated)
+    {
+        <!-- Redis Cart -->
+        <div class="cart-section">
+            <h3>Account Cart</h3>
+            <p id="redis-empty" class="empty-message" style="">Your Account cart is empty.</p>
+            <ul id="redisCart" class="cart-list" ondrop="drop(event, 'redis')" ondragover="allowDrop(event)"></ul>
+        </div>
+    }
+</div>
+
+<!-- Total Price & Payment -->
+<div class="total-section">
+    <h3>Total: $<span id="total-price">0.00</span></h3>
+    <button onclick="checkout()">Pay Now</button>
+</div>
+
+<!-- Styles -->
+<style>
+    .cart-container {
+        display: flex;
+        gap: 20px;
+    }
+
+    .cart-section {
+        width: 50%;
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 5px;
+        min-height: 200px;
+    }
+
+    .cart-list {
+        list-style: none;
+        padding: 0;
+        min-height: 150px;
+        border: 1px dashed #aaa;
+        padding: 10px;
+    }
+
+    .cart-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        cursor: grab;
+    }
+
+        .cart-item img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+    .quantity-input {
+        width: 60px;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .remove-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        color: red;
+    }
+
+    .total-section {
+        margin-top: 20px;
+        font-size: 20px;
+    }
+</style>
+
+<!-- JavaScript -->
+<script>
+    function loadCart() {
+        let localCart = JSON.parse(localStorage.getItem("cart")) || [];
+        renderCart(localCart, "local-cart", "local-empty");
+        fetch("/Cart/get")
+            .then(response => response.json())
+            .then(data => {
+                renderCart(data, "redisCart", "redis-empty");
+                localStorage.setItem("redisCart", JSON.stringify(data));
+            });
+        updateTotal();
+    }
+
+    function renderCart(cart, listId, emptyMsgId) {
+        let cartList = document.getElementById(listId);
+        let emptyMsg = document.getElementById(emptyMsgId);
+
+        cartList.innerHTML = "";
+        if (cart.length === 0) {
+            emptyMsg.style.display = "block";
+        } else {
+            emptyMsg.style.display = "none";
+            cart.forEach((item, index) => {
+                let li = createCartItem(item, index, listId);
+                cartList.appendChild(li);
+            });
+        }
+        updateTotal();
+    }
+
+    function createCartItem(item, index, cartType) {
+        let li = document.createElement("li");
+        li.className = "cart-item";
+        li.draggable = true;
+        li.ondragstart = (event) => drag(event, index, cartType);
+
+        li.innerHTML = `
+            <input type="checkbox" checked onchange="updateTotal()" data-index="${index}" data-cart="${cartType}">
+            <img src="${item.imageUrl}" alt="${item.name}">
+            <div>
+                <strong>${item.name}</strong> - $${(item.price * item.quantity).toFixed(2)}
+                <br>
+                <input type="number" class="quantity-input" min="1" value="${item.quantity}"
+                    onchange="updateQuantity(${index}, '${cartType}', this.value)">
+            </div>
+            <button class="remove-btn" onclick="removeItem(${index}, '${cartType}')">❌</button>
+        `;
+        return li;
+    }
+
+    function updateQuantity(index, cartType, newQuantity) {
+        let cart = JSON.parse(localStorage.getItem(cartType === "local-cart" ? "cart" : "redisCart")) || [];
+        newQuantity = parseInt(newQuantity);
+        if (newQuantity < 1) newQuantity = 1;
+        cart[index].quantity = newQuantity;
+        localStorage.setItem(cartType === "local-cart" ? "cart" : "redisCart", JSON.stringify(cart));
+        if (cartType === "redisCart"){
+            fetch("/Cart/update", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(cart)
+            }).then((response) => {
+                loadCart();
+                updateTotal();
+            });
+        }
+        else {
+            loadCart();
+            updateTotal();
+        }
+    }
+
+    function updateTotal() {
+        let total = 0;
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            let index = checkbox.getAttribute("data-index");
+            let cartType = checkbox.getAttribute("data-cart");
+            let cart = JSON.parse(localStorage.getItem(cartType === "local-cart" ? "cart" : "redisCart")) || [];
+
+            if (checkbox.checked && cart[index]) {
+                total += cart[index].price * cart[index].quantity;
+            }
+        });
+        document.getElementById("total-price").textContent = total.toFixed(2);
+        updateCartCount();
+    }
+
+    function removeItem(index, cartType) {
+        let cart = JSON.parse(localStorage.getItem(cartType === "local-cart" ? "cart" : "redisCart")) || [];
+        cart.splice(index, 1);
+        localStorage.setItem(cartType === "local-cart" ? "cart" : "redisCart", JSON.stringify(cart));
+        if (cartType === "redisCart"){
+            fetch("/Cart/update", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(cart)
+            }).then((response) => {
+                loadCart();
+                updateTotal();
+            });
+        }
+        else {
+            loadCart();
+            updateTotal();
+        }
+        loadCart();
+    }
+
+    function checkout() {
+        alert("Proceeding to payment...");
+    }
+
+    // Drag & Drop Functions
+    function allowDrop(event) {
+        event.preventDefault();
+    }
+
+    function drag(event, index, cartType) {
+        event.dataTransfer.setData("text/plain", JSON.stringify({ index, cartType }));
+    }
+
+    function drop(event, targetCartType) {
+        event.preventDefault();
+        let data = JSON.parse(event.dataTransfer.getData("text/plain"));
+        let sourceCartType = data.cartType;
+        let index = data.index;
+
+        let sourceCart = JSON.parse(localStorage.getItem(sourceCartType === "local-cart" ? "cart" : "redisCart")) || [];
+        let targetCart = JSON.parse(localStorage.getItem(targetCartType === "local" ? "cart" : "redisCart")) || [];
+
+        let item = sourceCart.splice(index, 1)[0];
+
+        // if item not exist in target then push to target
+        if (!targetCart.find(i => i.id === item.id)){
+            targetCart.push(item);
+        }
+      
+        localStorage.setItem(sourceCartType === "local-cart" ? "cart" : "redisCart", JSON.stringify(sourceCart));
+        localStorage.setItem(targetCartType === "local" ? "cart" : "redisCart", JSON.stringify(targetCart));
+
+        if (sourceCartType.includes("redis")){
+            fetch("/Cart/update", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(sourceCart)
+            }).then((response) => {
+                loadCart();
+            });
+        }
+
+        if (targetCartType.includes("redis")){
+                fetch("/Cart/update", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(targetCart)
+                }).then((response) => {
+                    loadCart();
+                });
+        }
+
+        console.log("source" , sourceCartType);
+        console.log("target" , targetCartType);
+
+       // loadCart();
+       // updateTotal();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadCart();
+        updateTotal();
+    });
+    updateTotal();
+</script>

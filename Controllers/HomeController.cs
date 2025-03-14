@@ -23,6 +23,11 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
             return View();
         }
 
+        public IActionResult CustomNotFound()
+        {
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

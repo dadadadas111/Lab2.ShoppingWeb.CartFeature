@@ -1,6 +1,7 @@
 ﻿@model IEnumerable<Lab2.ShoppingWeb.CartFeature.Models.Product>
 @{
     ViewData["Title"] = "Products Page";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
 }
 <h2>Product List</h2>
 
@@ -156,6 +157,7 @@
         localStorage.setItem("cart", JSON.stringify(cart));
         closeCartModal();
         updateCartUI();
+        updateCartCount();
         alert("Cart updated!");
     }
 

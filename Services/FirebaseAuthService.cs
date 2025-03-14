@@ -13,7 +13,8 @@ namespace Lab2.ShoppingWeb.CartFeature.Services
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, validPayload.Uid),
-                    new Claim(ClaimTypes.Email, validPayload.Claims["email"].ToString())
+                    new Claim(ClaimTypes.Email, validPayload.Claims["email"].ToString()),
+                    new Claim(ClaimTypes.Expiration, validPayload.ExpirationTimeSeconds.ToString())
                 };
 
                 var identity = new ClaimsIdentity(claims, "firebase");

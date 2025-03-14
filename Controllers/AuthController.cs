@@ -1,4 +1,5 @@
-﻿using Lab2.ShoppingWeb.CartFeature.Services;
+﻿using System.Security.Claims;
+using Lab2.ShoppingWeb.CartFeature.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -22,16 +23,30 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
             var user = await _authService.VerifyTokenAsync(idToken);
             if (user != null)
             {
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, user);
-                if (string.IsNullOrEmpty(returnUrl))
-                {
-                    return RedirectToAction("Index", "Home");
+                var exp = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Expiration)?.Value;
+                long expirationTimeLong = 0;
+                if (exp != null) {
+                    long.TryParse(exp, out expirationTimeLong);
                 }
-                else
+                var expirationTime = DateTimeOffset.FromUnixTimeSeconds(expirationTimeLong).UtcDateTime;
+                // Check if token is expired
+                if (expirationTime < DateTime.UtcNow)
                 {
-                    return Redirect(returnUrl);
+                    ViewBag.Error = "Session expired. Please log in again.";
+                    return View();
                 }
+
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = expirationTime // Set cookie expiration to match Firebase token
+                };
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, user, authProperties);
+
+                return string.IsNullOrEmpty(returnUrl) ? RedirectToAction("Index", "Home") : Redirect(returnUrl);
             }
+
             ViewBag.Error = "Invalid login";
             return View();
         }
