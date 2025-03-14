@@ -17,13 +17,20 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
         public IActionResult Login() => View();
 
         [HttpPost]
-        public async Task<IActionResult> Login(string idToken)
+        public async Task<IActionResult> Login(string idToken, string? returnUrl)
         {
             var user = await _authService.VerifyTokenAsync(idToken);
             if (user != null)
             {
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, user);
-                return RedirectToAction("Index", "Home");
+                if (string.IsNullOrEmpty(returnUrl))
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    return Redirect(returnUrl);
+                }
             }
             ViewBag.Error = "Invalid login";
             return View();

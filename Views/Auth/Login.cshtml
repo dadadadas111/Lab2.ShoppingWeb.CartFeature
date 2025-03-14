@@ -1,6 +1,15 @@
 ﻿@{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Login"; 
 }
+
+<!-- if query include ReturnUrl, show a warning message that you have to login to continue -->
+@if (Context.Request.Query.ContainsKey("ReturnUrl"))
+{
+    <p style="color: red">You have to login to continue
+        access to the page: @Context.Request.Query["ReturnUrl"]
+    </p>
+}
+
 <h1>Login</h1>
 @if (ViewBag.Error != null)
 {
@@ -36,6 +45,18 @@
             input.name = "idToken";
             input.value = idToken;
             form.appendChild(input);
+
+            // Preserve ReturnUrl if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnUrl = urlParams.get("ReturnUrl");
+            if (returnUrl) {
+                const returnInput = document.createElement("input");
+                returnInput.type = "hidden";
+                returnInput.name = "returnUrl";
+                returnInput.value = returnUrl;
+                form.appendChild(returnInput);
+            }
+
             document.body.appendChild(form);
             form.submit();
         }).catch(error => {

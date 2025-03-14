@@ -1,5 +1,186 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model IEnumerable<Lab2.ShoppingWeb.CartFeature.Models.Product>
 @{
+    ViewData["Title"] = "Products Page";
 }
+<h2>Product List</h2>
+
+<!-- View Mode Toggle Buttons -->
+<div>
+    <button onclick="setViewMode('grid')">Grid View</button>
+    <button onclick="setViewMode('list')">List View</button>
+</div>
+
+<!-- Products Container -->
+<div id="productContainer" class="grid-view">
+    @foreach (var product in Model)
+    {
+        <div class="product-card" data-id="@product.Id">
+            <img src="@product.ImageUrl" alt="@product.Name" class="product-image" />
+            <div class="product-info">
+                <h3>@product.Name</h3>
+                <p>Price: $@product.Price</p>
+                <button onclick="openCartModal('@product.Id', '@product.Name', '@product.ImageUrl', @product.Price)">Add to Cart</button>
+                <span class="cart-status" style="display:none;">🛒</span>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Cart Modal -->
+<div id="cartModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeCartModal()">&times;</span>
+        <h3 id="modalProductName"></h3>
+        <img id="modalProductImage" class="product-image" />
+        <p id="modalProductPrice"></p>
+        <label>Quantity:</label>
+        <input type="number" id="modalQuantity" min="1" value="1" />
+        <button onclick="confirmAddToCart()">Confirm</button>
+    </div>
+</div>
+
+<!-- CSS Styling -->
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background: black;
+        border: 1px solid #ddd;
+        margin: 10% auto;
+        padding: 20px;
+        width: 300px;
+        text-align: center;
+        border-radius: 5px;
+    }
+
+    .close {
+        /* position: absolute; */
+        /* right: 15px; */
+        margin-left: 80%;
+        cursor: pointer;
+        font-size: 30px;
+    }
+
+    .product-card {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin: 10px;
+        border-radius: 5px;
+        transition: 0.3s;
+        /* background: #fff; */
+    }
+
+    .product-image {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* Grid View */
+    .grid-view {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+        .grid-view .product-card {
+            width: 200px;
+            text-align: center;
+        }
+
+    /* List View */
+    .list-view {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .list-view .product-card {
+            display: flex;
+            align-items: center; /* Ensures proper alignment */
+            gap: 15px;
+            padding: 15px;
+        }
+
+        .list-view .product-image {
+            width: 100px; /* Adjusted size for list view */
+            height: 100px;
+            flex-shrink: 0; /* Prevents image from shrinking */
+        }
+
+        .list-view .product-info {
+            flex-grow: 1;
+        }
+</style>
+
+<!-- JavaScript -->
+<script>
+    let selectedProduct = {};
+
+    function openCartModal(id, name, imageUrl, price) {
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
+        let existingItem = cart.find(item => item.id === id);
+        let quantity = existingItem ? existingItem.quantity : 1; // Use saved quantity or default to 1
+
+        selectedProduct = { id, name, imageUrl, price };
+        document.getElementById("modalProductName").innerText = name;
+        document.getElementById("modalProductImage").src = imageUrl;
+        document.getElementById("modalProductPrice").innerText = "Price: $" + price;
+        document.getElementById("modalQuantity").value = quantity;
+        document.getElementById("cartModal").style.display = "block";
+    }
+
+    function closeCartModal() {
+        document.getElementById("cartModal").style.display = "none";
+    }
+
+    function confirmAddToCart() {
+        let quantity = parseInt(document.getElementById("modalQuantity").value);
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+        // Remove existing entry if exists
+        cart = cart.filter(item => item.id !== selectedProduct.id);
+
+        // Add new entry with updated quantity
+        cart.push({ ...selectedProduct, quantity });
+
+        localStorage.setItem("cart", JSON.stringify(cart));
+        closeCartModal();
+        updateCartUI();
+        alert("Cart updated!");
+    }
+
+        function updateCartUI() {
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+        document.querySelectorAll(".product-card").forEach(card => {
+            let productId = card.getAttribute("data-id");
+            let inCart = cart.some(item => item.id === productId);
+
+            let statusTag = card.querySelector(".cart-status");
+            if (inCart) {
+                statusTag.innerText = "🛒";
+                statusTag.style.display = "inline";
+            } else {
+                statusTag.style.display = "none";
+            }
+        });
+    }
+
+    // Run updateCartUI on page load to reflect cart status
+    document.addEventListener("DOMContentLoaded", updateCartUI);
+
+    function setViewMode(mode) {
+        const container = document.getElementById("productContainer");
+        container.className = mode === 'grid' ? 'grid-view' : 'list-view';
+    }
+</script>

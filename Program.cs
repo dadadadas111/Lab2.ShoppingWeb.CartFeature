@@ -7,6 +7,7 @@ using Lab2.ShoppingWeb.CartFeature.Middleware;
 using Lab2.ShoppingWeb.CartFeature.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,13 +20,21 @@ FirebaseApp.Create(new AppOptions()
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+// Add Redis
+builder.Services.AddSingleton<IConnectionMultiplexer>(
+    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"))
+);
+builder.Services.AddScoped<RedisService>();
+// Add Firebase Auth Service
 builder.Services.AddSingleton<FirebaseAuthService>();
+// Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+// Add Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
