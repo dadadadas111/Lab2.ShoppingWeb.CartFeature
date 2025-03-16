@@ -18,7 +18,6 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
 
         private string GetUserCartKey() => $"cart:{User.FindFirst(ClaimTypes.Email)?.Value}";
 
-        // GET: /Cart/
         public IActionResult Index()
         {
             return View();
@@ -62,6 +61,7 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
         [HttpPost("update")]
         public IActionResult UpdateCart([FromBody] List<CartItem> cart)
         {
+            ClearCart();
             var userCartKey = GetUserCartKey();
             var batch = _redisDb.CreateBatch();
 
@@ -116,6 +116,11 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
             batch.Execute();
 
             return Ok();
+        }
+
+        private void ClearCart()
+        {
+            _redisDb.KeyDelete(GetUserCartKey());
         }
 
 

@@ -116,8 +116,6 @@
         try {
             console.log("listId:", listId);
             let cartList = document.getElementById(listId);
-            let emptyMsg = document.getElementById(emptyMsgId);
-
             cartList.innerHTML = "";
                 cart.forEach((item, index) => {
                     let li = createCartItem(item, index, listId);
@@ -125,7 +123,7 @@
                 });
             updateTotal();
         } catch (error) {
-            console.error(error);
+            console.error("then error is:", error);
         }
     }
 
