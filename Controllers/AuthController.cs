@@ -46,9 +46,13 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
 
                 return string.IsNullOrEmpty(returnUrl) ? RedirectToAction("Index", "Home") : Redirect(returnUrl);
             }
-
-            ViewBag.Error = "Invalid login";
-            return View();
+            else
+            {
+                // sign out since the token is invalid
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                ViewBag.Error = "Invalid login";
+                return View();
+            }
         }
 
         public async Task<IActionResult> Logout()

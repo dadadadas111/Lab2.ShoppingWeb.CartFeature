@@ -20,8 +20,9 @@ namespace Lab2.ShoppingWeb.CartFeature.Services
                 var identity = new ClaimsIdentity(claims, "firebase");
                 return new ClaimsPrincipal(identity);
             }
-            catch
+            catch (Exception e)
             {
+                Console.WriteLine(e);
                 return null; // Invalid token
             }
         }

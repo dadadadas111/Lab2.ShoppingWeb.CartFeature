@@ -6,19 +6,26 @@
 <h1>Shopping Cart</h1>
 
 <div class="cart-container">
-    <!-- Local Cart -->
-    <div class="cart-section">
-        <h3>Local Cart</h3>
-        <p id="local-empty" class="empty-message" style="display: none;">Your local cart is empty.</p>
-        <ul id="local-cart" class="cart-list" ondrop="drop(event, 'local')" ondragover="allowDrop(event)"></ul>
-    </div>
+    @if (!isAuthenticated)
+    {
+        <!-- Local Cart -->
+        <div class="cart-section">
+            <h3>Guest Cart</h3>
+            <p id="local-empty" class="empty-message" >
+                This cart will not be saved in our system. Please login to save your cart.
+            </p>
+            <ul id="local-cart" class="cart-list" ondrop="drop(event, 'local')" ondragover="allowDrop(event)"></ul>
+        </div>
+    }
 
     @if (isAuthenticated)
     {
         <!-- Redis Cart -->
         <div class="cart-section">
             <h3>Account Cart</h3>
-            <p id="redis-empty" class="empty-message" style="">Your Account cart is empty.</p>
+            <p id="redis-empty" class="empty-message" >
+                Confirm these items and process to payment.
+            </p>
             <ul id="redisCart" class="cart-list" ondrop="drop(event, 'redis')" ondragover="allowDrop(event)"></ul>
         </div>
     }
@@ -106,20 +113,20 @@
     }
 
     function renderCart(cart, listId, emptyMsgId) {
-        let cartList = document.getElementById(listId);
-        let emptyMsg = document.getElementById(emptyMsgId);
+        try {
+            console.log("listId:", listId);
+            let cartList = document.getElementById(listId);
+            let emptyMsg = document.getElementById(emptyMsgId);
 
-        cartList.innerHTML = "";
-        if (cart.length === 0) {
-            emptyMsg.style.display = "block";
-        } else {
-            emptyMsg.style.display = "none";
-            cart.forEach((item, index) => {
-                let li = createCartItem(item, index, listId);
-                cartList.appendChild(li);
-            });
+            cartList.innerHTML = "";
+                cart.forEach((item, index) => {
+                    let li = createCartItem(item, index, listId);
+                    cartList.appendChild(li);
+                });
+            updateTotal();
+        } catch (error) {
+            console.error(error);
         }
-        updateTotal();
     }
 
     function createCartItem(item, index, cartType) {
@@ -232,7 +239,7 @@
         if (!targetCart.find(i => i.id === item.id)){
             targetCart.push(item);
         }
-      
+
         localStorage.setItem(sourceCartType === "local-cart" ? "cart" : "redisCart", JSON.stringify(sourceCart));
         localStorage.setItem(targetCartType === "local" ? "cart" : "redisCart", JSON.stringify(targetCart));
 

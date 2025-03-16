@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -143,17 +146,22 @@
     <!--Script to update cart item number-->
     <script>
         function updateCartCount() {
-            console.log("Updating cart count...");
             let cart = JSON.parse(localStorage.getItem("cart")) || [];
             let totalItems = cart.length;
             document.getElementById("cart-count").innerText = totalItems;
-            fetch("/Cart/get")
-            .then(response => response.json())
-            .then(data => {
-                console.log("Redis cart:", data);
-                totalItems += data.length;
-                document.getElementById("cart-count").innerText = totalItems;
-            });
+            try {
+                fetch("/Cart/get")
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Redis cart 12312:", data);
+                    const length = data.length === 0 ? totalItems : data.length;
+                    document.getElementById("cart-count").innerText = length;
+                    // save to local storage
+                    localStorage.setItem("redisCart", JSON.stringify(data));
+                });
+            } catch (error) {
+                console.error("Error:", error);
+            }
         }
         // Update cart count on page load
         document.addEventListener("DOMContentLoaded", updateCartCount);
@@ -209,6 +217,31 @@
             });
         };
     </script>
+
+    @if (isAuthenticated)
+    {
+        <script>
+            function syncLocalCartToUser()
+            {
+                let cart = JSON.parse(localStorage.getItem("cart")) || [];
+                fetch("/Cart/sync", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(cart)
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            localStorage.removeItem("cart");
+                            updateCartUI();
+                            updateCartCount();
+                        }
+                    });
+            }
+            syncLocalCartToUser();
+        </script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

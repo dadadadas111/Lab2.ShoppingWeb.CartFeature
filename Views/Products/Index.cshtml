@@ -159,11 +159,16 @@
         updateCartUI();
         updateCartCount();
         alert("Cart updated!");
+
+        // Sync cart to user if authenticated
+        syncLocalCartToUser();
     }
 
         function updateCartUI() {
-        let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
+        let local_cart = JSON.parse(localStorage.getItem("cart")) || [];
+        let redis_cart = JSON.parse(localStorage.getItem("redisCart")) || [];
+        // combine them
+        let cart = [...local_cart, ...redis_cart];
         document.querySelectorAll(".product-card").forEach(card => {
             let productId = card.getAttribute("data-id");
             let inCart = cart.some(item => item.id === productId);
@@ -177,7 +182,6 @@
             }
         });
     }
-
     // Run updateCartUI on page load to reflect cart status
     document.addEventListener("DOMContentLoaded", updateCartUI);
 
