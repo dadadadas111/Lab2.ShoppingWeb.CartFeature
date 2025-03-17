@@ -22,6 +22,25 @@ namespace Lab2.ShoppingWeb.CartFeature.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.Category", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
+                });
+
             modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.Order", b =>
                 {
                     b.Property<Guid>("Id")
@@ -81,12 +100,18 @@ namespace Lab2.ShoppingWeb.CartFeature.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Discontinued")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
@@ -99,12 +124,59 @@ namespace Lab2.ShoppingWeb.CartFeature.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("QuantityPerUnit")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReorderLevel")
+                        .HasColumnType("int");
+
                     b.Property<int>("StockQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("UnitsOnOrder")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("SupplierId");
+
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.Supplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Suppliers");
                 });
 
             modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.User", b =>
@@ -163,9 +235,38 @@ namespace Lab2.ShoppingWeb.CartFeature.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.Product", b =>
+                {
+                    b.HasOne("Lab2.ShoppingWeb.CartFeature.Models.Category", "Category")
+                        .WithMany("Products")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lab2.ShoppingWeb.CartFeature.Models.Supplier", "Supplier")
+                        .WithMany("Products")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.Category", b =>
+                {
+                    b.Navigation("Products");
+                });
+
             modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.Supplier", b =>
+                {
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("Lab2.ShoppingWeb.CartFeature.Models.User", b =>

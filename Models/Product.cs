@@ -22,5 +22,23 @@ namespace Lab2.ShoppingWeb.CartFeature.Models
         public string ImageUrl { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // New fields
+        public Guid SupplierId { get; set; }
+        public Supplier Supplier { get; set; }
+
+        public Guid CategoryId { get; set; }
+        public Category Category { get; set; }
+
+        public string QuantityPerUnit { get; set; } = string.Empty;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal UnitPrice { get; set; } = 0;
+
+        public int UnitsOnOrder { get; set; } = 0;
+
+        public int ReorderLevel { get; set; } = 0;
+
+        public bool Discontinued { get; set; } = false;
     }
 }
