@@ -61,7 +61,7 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.UseMiddleware<FirebaseAuthMiddleware>();
+//app.UseMiddleware<FirebaseAuthMiddleware>();
 
 app.UseStatusCodePagesWithReExecute("/Home/CustomNotFound");
 

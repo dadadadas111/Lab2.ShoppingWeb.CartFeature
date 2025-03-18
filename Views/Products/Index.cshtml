@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Lab2.ShoppingWeb.CartFeature.Models.Product>
+﻿@model Lab2.ShoppingWeb.CartFeature.ViewModels.ProductViewModel
 @{
     ViewData["Title"] = "Products Page";
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
@@ -13,18 +13,84 @@
 
 <!-- Products Container -->
 <div id="productContainer" class="grid-view">
-    @foreach (var product in Model)
+    @foreach (var product in Model.Products)
     {
         <div class="product-card" data-id="@product.Id">
             <img src="@product.ImageUrl" alt="@product.Name" class="product-image" />
+
             <div class="product-info">
-                <h3>@product.Name</h3>
-                <p>Price: $@product.Price</p>
-                <button onclick="openCartModal('@product.Id', '@product.Name', '@product.ImageUrl', @product.Price)">Add to Cart</button>
+                <h3 class="product-name">@product.Name</h3>
+                <p class="product-category">@product.Category.Name</p>
+
+                @if (product.Discontinued)
+                {
+                    <span class="discontinued-badge">Discontinued</span>
+                }
+
+                <p class="product-price"><strong>$@product.Price</strong></p>
+
+                <p class="product-stock">
+                    <span>Stock: @product.StockQuantity</span> |
+                    <span>On Order: @product.UnitsOnOrder</span>
+                </p>
+
+                <p class="product-supplier">Supplier: @product.Supplier.Name</p>
+
+                <button class="add-to-cart-btn"
+                        onclick="openCartModal('@product.Id', '@product.Name', '@product.ImageUrl', @product.Price)">
+                    Add to Cart
+                </button>
                 <span class="cart-status" style="display:none;">🛒</span>
             </div>
         </div>
     }
+</div>
+
+<div class="filters" id="filters">
+    <label for="searchName">Search by Name:</label>
+    <input type="text" id="searchName" placeholder="Search name..." value="@Model.SearchName" />
+    <label for="minPrice">Min Price:</label>
+    <input type="number" id="minPrice" value="@Model.MinPrice" />
+    <label for="maxPrice">Max Price:</label>
+    <input type="number" id="maxPrice" value="@Model.MaxPrice" />
+    <!-- Category Filter -->
+    <div class="filter-section">
+        <h4>Categories</h4>
+        <input type="text" class="filter-search" placeholder="Search categories..." onkeyup="filterCheckboxes('categoryFilter', this.value)" />
+        <div id="categoryFilter" class="checkbox-list">
+            @foreach (var category in Model.Categories)
+            {
+                // Check if category is selected
+                bool isChecked = Model.SelectedCategoryIds.Contains(category.Id.ToString());
+
+                <label>
+                    <span>
+                        <input checked=@isChecked type="checkbox" name="category" value="@category.Id" /> <span>@category.Name</span>
+                    </span>
+                </label>
+            }
+        </div>
+    </div>
+
+    <!-- Supplier Filter -->
+    <div class="filter-section">
+        <h4>Suppliers</h4>
+        <input type="text" class="filter-search" placeholder="Search suppliers..." onkeyup="filterCheckboxes('supplierFilter', this.value)" />
+        <div id="supplierFilter" class="checkbox-list">
+            @foreach (var supplier in Model.Suppliers)
+            {
+            // Check if supplier is selected
+                bool isChecked = Model.SelectedSupplierIds.Contains(supplier.Id.ToString());
+                <label>
+                    <span>
+                        <input checked=@isChecked type="checkbox" name="supplier" value="@supplier.Id" /> <span>@supplier.Name</span>
+                    </span>
+                </label>
+            }
+        </div>
+    </div>
+
+    <button onclick="applyFilters()">Apply Filters</button>
 </div>
 
 <!-- Cart Modal -->
@@ -113,8 +179,8 @@
         }
 
         .list-view .product-image {
-            width: 100px; /* Adjusted size for list view */
-            height: 100px;
+            width: 200px; /* Adjusted size for list view */
+            height: 200px;
             flex-shrink: 0; /* Prevents image from shrinking */
         }
 

@@ -72,6 +72,9 @@
           style="min-height:90vh">
         @RenderBody()
     </main>
+    <aside data-expandable id="aside-right">
+        <!--TODO: make a filter UI there-->
+    </aside>
     <footer class="border-top footer text-muted"
             style="padding-top: 20px; padding-bottom: 20px">
         <p>
@@ -86,6 +89,7 @@
             justify-content: center;
             align-items: center;
         }
+
         .navbar {
             display: flex;
             justify-content: space-between;
@@ -131,12 +135,37 @@
             padding: 8px 15px;
             font-size: 1rem;
         }
-        
+
         .auth-btn {
             padding: 1rem;
             margin: 0 auto 1rem;
             background: transparent;
         }
+
+        #filters {
+            margin-right: 20px;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .filter-section {
+            margin-bottom: 15px;
+        }
+
+        .filter-search {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 5px;
+        }
+
+        .checkbox-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+        }
+
     </style>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -145,6 +174,48 @@
 
     <!--Script to update cart item number-->
     <script>
+
+             // move filter to Be chilren Of id aside-right
+        const filters = document.getElementById("filters");
+        const aside = document.getElementById("aside-right");
+        if (filters && aside) {
+            aside.appendChild(filters);
+        }
+
+            function applyFilters() {
+            const searchName = document.getElementById("searchName").value;
+            const minPrice = document.getElementById("minPrice").value;
+            const maxPrice = document.getElementById("maxPrice").value;
+            const selectedCategories = Array.from(document.querySelectorAll("input[name='category']:checked"))
+                .map(cb => cb.value)
+                .join(",");
+            const selectedSuppliers = Array.from(document.querySelectorAll("input[name='supplier']:checked"))
+                .map(cb => cb.value)
+                .join(",");
+
+            const queryParams = new URLSearchParams({
+                searchName: searchName,
+                minPrice: minPrice,
+                maxPrice: maxPrice,
+                categoryIds: selectedCategories,
+                supplierIds: selectedSuppliers,
+                page: 1 // Reset to first page on new filter
+            });
+
+            window.location.href = `/Products?${queryParams.toString()}`;
+            }
+
+            function filterCheckboxes(containerId, searchValue) {
+                const checkboxes = document.querySelectorAll(`#${containerId} label`);
+                const filter = searchValue.toLowerCase();
+
+                checkboxes.forEach(label => {
+                    const text = label.textContent.toLowerCase();
+                    label.style.display = text.includes(filter) ? "block" : "none";
+                });
+            }
+
+
         function updateCartCount() {
             let cart = JSON.parse(localStorage.getItem("cart")) || [];
             let totalItems = cart.length;
