@@ -39,7 +39,7 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = true,
-                    ExpiresUtc = expirationTime // Set cookie expiration to match Firebase token
+                    ExpiresUtc = expirationTime
                 };
 
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, user, authProperties);

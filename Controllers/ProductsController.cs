@@ -1,12 +1,15 @@
 ﻿using Lab2.ShoppingWeb.CartFeature.Data;
 using Lab2.ShoppingWeb.CartFeature.Data.Interfaces;
 using Lab2.ShoppingWeb.CartFeature.Data.Repositories;
+using Lab2.ShoppingWeb.CartFeature.Models;
 using Lab2.ShoppingWeb.CartFeature.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lab2.ShoppingWeb.CartFeature.Controllers
 {
+    [Route("Products")]
     public class ProductsController : Controller
     {
         private readonly IProductRepository productRepository;
@@ -87,6 +90,34 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
             };
 
             return View(viewModel);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] Product updatedProduct)
+        {
+            var product = await productRepository.GetByIdAsync(id);
+            if (product == null) return NotFound();
+
+            product.Name = updatedProduct.Name;
+            product.Price = updatedProduct.Price;
+            product.CategoryId = updatedProduct.CategoryId;
+            product.SupplierId = updatedProduct.SupplierId;
+
+            productRepository.Update(product);
+            await productRepository.SaveChangesAsync();
+            return Ok();
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> DeleteProduct(Guid id)
+        {
+            var product = await productRepository.GetByIdAsync(id);
+            if (product == null) return NotFound();
+            productRepository.Delete(product);
+            await productRepository.SaveChangesAsync();
+            return Ok();
         }
 
     }

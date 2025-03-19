@@ -73,11 +73,17 @@
 
                 <p class="product-supplier">Supplier: @product.Supplier.Name</p>
 
-                <button class="add-to-cart-btn"
+                <button class="add-to-cart-btn accent"
                         onclick="openCartModal('@product.Id', '@product.Name', '@product.ImageUrl', @product.Price)">
                     Add to Cart
                 </button>
                 <span class="cart-status" style="display:none;">🛒</span>
+
+                @if (User.IsInRole("Admin"))
+                {
+                    <button class="attention" onclick="openEditProductModal('@product.Id', '@product.Name', '@product.Price', '@product.CategoryId', '@product.SupplierId')">Edit</button>
+                }
+
             </div>
         </div>
     }
@@ -179,6 +185,44 @@ else
         <button onclick="confirmAddToCart()">Confirm</button>
     </div>
 </div>
+
+<!-- Edit Product Modal -->
+<div id="editProductModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditProductModal()">&times;</span>
+        <h3>Edit Product</h3>
+        <form id="editProductForm" onsubmit="event.preventDefault()">
+            <input type="hidden" id="editProductId" />
+
+            <label>Name:</label>
+            <input type="text" id="editProductName" required />
+
+            <label>Price:</label>
+            <input type="number" id="editProductPrice" step="0.01" required />
+
+            <label>Category:</label>
+            <select id="editProductCategory">
+                @foreach (var category in Model.Categories)
+                {
+                    <option value="@category.Id">@category.Name</option>
+                }
+            </select>
+
+            <label>Supplier:</label>
+            <select id="editProductSupplier">
+                @foreach (var supplier in Model.Suppliers)
+                {
+                    <option value="@supplier.Id">@supplier.Name</option>
+                }
+            </select>
+
+            <button type="submit" onclick="confirmEditProduct()">Save Changes</button>
+            <button type="reset" class="danger" onclick="confirmDeleteProduct()">Delete</button>
+
+        </form>
+    </div>
+</div>
+
 
 <!-- CSS Styling -->
 <style>
@@ -350,4 +394,76 @@ else
         const container = document.getElementById("productContainer");
         container.className = mode === 'grid' ? 'grid-view' : 'list-view';
     }
+</script>
+
+<!--script to edit products-->
+<script>
+        function openEditProductModal(id, name, price, categoryId, supplierId) {
+        document.getElementById("editProductId").value = id;
+        document.getElementById("editProductName").value = name;
+        document.getElementById("editProductPrice").value = price;
+        document.getElementById("editProductCategory").value = categoryId;
+        document.getElementById("editProductSupplier").value = supplierId;
+
+        document.getElementById("editProductModal").style.display = "block";
+    }
+
+    function closeEditProductModal() {
+        document.getElementById("editProductModal").style.display = "none";
+    }
+
+    async function confirmEditProduct() {
+        const productId = document.getElementById("editProductId").value;
+        const updatedProduct = {
+            id: productId,
+            name: document.getElementById("editProductName").value,
+            price: parseFloat(document.getElementById("editProductPrice").value),
+            categoryId: document.getElementById("editProductCategory").value,
+            supplierId: document.getElementById("editProductSupplier").value
+        };
+
+        try {
+            const response = await fetch(`/Products/update/${productId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedProduct)
+            });
+
+            if (response.ok) {
+                alert("Product updated successfully!");
+                window.location.reload(); // Reload page after update
+            } else {
+                alert("Failed to update product.");
+            }
+        } catch (error) {
+            console.error("Error updating product:", error);
+        }
+    }
+
+    function confirmDeleteProduct() {
+        const productId = document.getElementById("editProductId").value;
+        if (confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
+            deleteProduct(productId);
+        }
+    }
+
+    async function deleteProduct(productId) {
+        try {
+            const response = await fetch(`/Products/delete/${productId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            if (response.ok) {
+                alert("Product deleted successfully!");
+                window.location.reload(); // Reload page after delete
+            } else {
+                alert("Failed to delete product.");
+            }
+        } catch (error) {
+            console.error("Error deleting product:", error);
+        }
+    }
+
+
 </script>
