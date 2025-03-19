@@ -14,5 +14,6 @@ namespace Lab2.ShoppingWeb.CartFeature.ViewModels
         public decimal? MaxPrice { get; set; }
         public string? SelectedCategoryIds { get; set; }
         public string? SelectedSupplierIds { get; set; }
+        public string? SortOption { get; set; }
     }
 }

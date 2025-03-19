@@ -22,19 +22,54 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
 
         public async Task<IActionResult> Index(
             [FromQuery] string searchName,
-            [FromQuery] List<Guid> categoryIds,
-            [FromQuery] List<Guid> supplierIds,
+            [FromQuery] string categoryIds_string,
+            [FromQuery] string supplierIds_string,
             [FromQuery] decimal? minPrice,
             [FromQuery] decimal? maxPrice,
             [FromQuery] bool? onlyAvailable,
-            [FromQuery] int pageNumber = 1,
+            [FromQuery] string sort,
+            [FromQuery] int page = 1,
             [FromQuery] int pageSize = 9)
         {
+
+            List<Guid> categoryIds = categoryIds_string?.Split(',').Select(Guid.Parse).ToList();
+            List<Guid> supplierIds = supplierIds_string?.Split(',').Select(Guid.Parse).ToList();
+
             var (products, totalPages) = await productRepository.GetWithFilterAsync(
-                searchName, categoryIds, supplierIds, minPrice, maxPrice, onlyAvailable, pageNumber, pageSize);
+                searchName, categoryIds, supplierIds, minPrice, maxPrice, onlyAvailable, page, pageSize, sort);
 
             var suppliers = await supplierRepository.GetAllAsync();
             var categories = await categoryRepository.GetAllAsync();
+
+            // when return the list of suppliers and categories, sort the list by name, and the selected items should be on top
+            suppliers = suppliers.OrderBy(s => s.Name).ToList();
+            categories = categories.OrderBy(c => c.Name).ToList();
+
+            string SelectedCategoryIds = "";
+            string SelectedSupplierIds = "";
+
+            // selected items should be on top
+            if (categoryIds != null)
+            {
+                var selectedCategories = categories.Where(c => categoryIds.Contains(c.Id)).ToList();
+                foreach (var category in selectedCategories)
+                {
+                    SelectedCategoryIds += category.Id + ",";
+                }
+                SelectedCategoryIds = SelectedCategoryIds.TrimEnd(',');
+                categories = selectedCategories.Concat(categories.Except(selectedCategories)).ToList();
+            }
+
+            if (supplierIds != null)
+            {
+                var selectedSuppliers = suppliers.Where(s => supplierIds.Contains(s.Id)).ToList();
+                foreach (var supplier in selectedSuppliers)
+                {
+                    SelectedSupplierIds += supplier.Id + ",";
+                }
+                SelectedSupplierIds = SelectedSupplierIds.TrimEnd(',');
+                suppliers = selectedSuppliers.Concat(suppliers.Except(selectedSuppliers)).ToList();
+            }
 
             var viewModel = new ProductViewModel
             {
@@ -42,12 +77,13 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
                 Suppliers = suppliers,
                 Categories = categories,
                 TotalPages = totalPages,
-                CurrentPage = pageNumber,
+                CurrentPage = page,
                 SearchName = searchName,
                 MaxPrice = maxPrice,
                 MinPrice = minPrice,
-                SelectedCategoryIds = categoryIds != null ? string.Join(",", categoryIds) : null,
-                SelectedSupplierIds = supplierIds != null ? string.Join(",", supplierIds) : null
+                SelectedCategoryIds = SelectedCategoryIds,
+                SelectedSupplierIds = SelectedSupplierIds,
+                SortOption = sort,
             };
 
             return View(viewModel);

@@ -145,7 +145,7 @@
         #filters {
             margin-right: 20px;
             margin-top: 20px;
-            padding: 20px;
+            padding: 10px;
             border: 1px solid #ddd;
         }
 
@@ -164,6 +164,46 @@
             overflow-y: auto;
             border: 1px solid #ddd;
             padding: 5px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 5px; /* Add space between checkbox and text */
+        }
+
+        .checkbox-label span{
+                width: 100%;
+        }
+
+        h4 {
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .page-btn {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+            .page-btn.active {
+                font-weight: bold;
+                background: #007bff;
+                color: white;
+                border-color: #007bff;
+            }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
     </style>
@@ -197,12 +237,29 @@
                 searchName: searchName,
                 minPrice: minPrice,
                 maxPrice: maxPrice,
-                categoryIds: selectedCategories,
-                supplierIds: selectedSuppliers,
-                page: 1 // Reset to first page on new filter
+                categoryIds_string: selectedCategories,
+                supplierIds_string: selectedSuppliers,
             });
 
             window.location.href = `/Products?${queryParams.toString()}`;
+            }
+            
+            function clearFilters() {
+                window.location.href = "/Products";
+            }
+
+            function applySort() {
+                const sort = document.getElementById("sort").value;
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set("sort", sort);
+                window.location.href = `/Products?${urlParams.toString()}`;
+            }
+
+            function changePage(page){
+                // keep all the current search params but add the page
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set("page", page);
+                window.location.href = `/Products?${urlParams.toString()}`;
             }
 
             function filterCheckboxes(containerId, searchValue) {
@@ -211,7 +268,7 @@
 
                 checkboxes.forEach(label => {
                     const text = label.textContent.toLowerCase();
-                    label.style.display = text.includes(filter) ? "block" : "none";
+                    label.style.display = text.includes(filter) ? "flex" : "none";
                 });
             }
 

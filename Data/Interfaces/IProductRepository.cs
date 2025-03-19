@@ -12,6 +12,7 @@ namespace Lab2.ShoppingWeb.CartFeature.Data.Interfaces
            decimal? maxPrice = null,
            bool? onlyAvailable = null,
            int pageNumber = 1,
-           int pageSize = 10);
+           int pageSize = 10,
+           string sortOption = "name_asc");
     }
 }
