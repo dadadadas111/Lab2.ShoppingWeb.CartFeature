@@ -3,6 +3,7 @@ using Google.Apis.Auth.OAuth2;
 using Lab2.ShoppingWeb.CartFeature.Data;
 using Lab2.ShoppingWeb.CartFeature.Data.Interfaces;
 using Lab2.ShoppingWeb.CartFeature.Data.Repositories;
+using Lab2.ShoppingWeb.CartFeature.Hubs;
 using Lab2.ShoppingWeb.CartFeature.Middleware;
 using Lab2.ShoppingWeb.CartFeature.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -20,6 +21,7 @@ FirebaseApp.Create(new AppOptions()
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 // Add Redis
 builder.Services.AddSingleton<IConnectionMultiplexer>(
     ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"))
@@ -69,15 +71,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-//app.MapGet("/api/test-auth", (HttpContext context) =>
-//{
-//    if (context.User.Identity?.IsAuthenticated == true)
-//    {
-//        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-//        var email = context.User.FindFirst(ClaimTypes.Email)?.Value;
-//        return Results.Json(new { message = "Authenticated!", userId, email });
-//    }
-//    return Results.Json(new { message = "Unauthorized" }, statusCode: 401);
-//});
+app.MapHub<ProductHub>("/productHub");
 
 app.Run();

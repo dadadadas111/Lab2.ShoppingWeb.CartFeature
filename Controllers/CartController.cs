@@ -1,4 +1,7 @@
-﻿using Lab2.ShoppingWeb.CartFeature.Models;
+﻿using Lab2.ShoppingWeb.CartFeature.Data;
+using Lab2.ShoppingWeb.CartFeature.Data.Interfaces;
+using Lab2.ShoppingWeb.CartFeature.Data.Repositories;
+using Lab2.ShoppingWeb.CartFeature.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using StackExchange.Redis;
@@ -10,10 +13,12 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
     public class CartController : Controller
     {
         private readonly IDatabase _redisDb;
+        private readonly IProductRepository productRepository;
 
-        public CartController(IConnectionMultiplexer redis)
+        public CartController(IConnectionMultiplexer redis, ApplicationDbContext context)
         {
             _redisDb = redis.GetDatabase();
+            productRepository = new ProductRepository(context);
         }
 
         private string GetUserCartKey() => $"cart:{User.FindFirst(ClaimTypes.Email)?.Value}";
@@ -49,6 +54,32 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
 
             var cartItems = cartEntries.Select(entry => JsonConvert.DeserializeObject<CartItem>(entry.Value)).ToArray();
             return Ok(cartItems);
+        }
+
+        [HttpGet("get-sync-with-db")]
+        public async Task<IActionResult> GetCartSyncWithDb()
+        {
+            var userCartKey = GetUserCartKey();
+            var cartEntries = _redisDb.HashGetAll(userCartKey);
+            if (cartEntries.Length == 0)
+            {
+                return Ok(new CartItem[0]);
+            }
+            var cartItems = cartEntries.Select(entry => JsonConvert.DeserializeObject<CartItem>(entry.Value)).ToArray();
+            List<CartItem> cartToReturn = new List<CartItem>();
+            // check info in cartItems with DB, and update the price and name
+            foreach (var item in cartItems)
+            {
+                var product = await productRepository.GetByIdAsync(Guid.Parse(item.id));
+                if (product != null)
+                {
+                    item.name = product.Name;
+                    item.price = product.Price;
+                    cartToReturn.Add(item);
+                }
+            }
+            UpdateCart(cartToReturn);
+            return Ok(cartToReturn);
         }
 
 

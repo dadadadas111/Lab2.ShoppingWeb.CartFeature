@@ -3,6 +3,8 @@
     ViewBag.Title = "Shopping Cart";
 }
 
+<div id="cartNotifications" class="cart-notifications"></div>
+
 <h1>Shopping Cart</h1>
 
 <div class="cart-container">
@@ -11,7 +13,7 @@
         <!-- Local Cart -->
         <div class="cart-section">
             <h3>Guest Cart</h3>
-            <p id="local-empty" class="empty-message" >
+            <p id="local-empty" class="empty-message">
                 This cart will not be saved in our system. Please login to save your cart.
             </p>
             <ul id="local-cart" class="cart-list" ondrop="drop(event, 'local')" ondragover="allowDrop(event)"></ul>
@@ -23,7 +25,7 @@
         <!-- Redis Cart -->
         <div class="cart-section">
             <h3>Account Cart</h3>
-            <p id="redis-empty" class="empty-message" >
+            <p id="redis-empty" class="empty-message">
                 Confirm these items and process to payment.
             </p>
             <ul id="redisCart" class="cart-list" ondrop="drop(event, 'redis')" ondragover="allowDrop(event)"></ul>
@@ -96,9 +98,100 @@
         margin-top: 20px;
         font-size: 20px;
     }
+
+    .cart-notifications {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        z-index: 1000;
+        max-width: 300px;
+    }
+
+    .cart-message {
+        background-color: darkgreen;
+        color: white;
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+        font-size: 14px;
+        animation: fadeOut 5s forwards;
+    }
+
 </style>
 
 <!-- JavaScript -->
+<!-- realtime cart -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    const cartConnection = new signalR.HubConnectionBuilder()
+        .withUrl("/productHub")
+        .build();
+
+    cartConnection.start()
+        .then(() => console.log("Connected to SignalR for Cart"))
+        .catch(err => console.error("SignalR connection failed:", err));
+
+    cartConnection.on("ProductUpdated", (productId, reportMessage) => {
+        console.log(`Product ${productId} updated!`);
+
+        // Find matching cart item
+        let hmessageBox = document.getElementById(`message-${productId}`);
+        if (hmessageBox) {
+            let notificationContainer = document.getElementById("cartNotifications");
+            let messageBox = document.createElement("div");
+            messageBox.className = "cart-message";
+            messageBox.innerHTML = reportMessage;
+
+            notificationContainer.appendChild(messageBox);
+
+            loadCartDb();
+            updateTotal();
+
+            // Auto-remove message after 5s
+            setTimeout(() => {
+                messageBox.remove();
+            }, 5000);
+        }
+    });
+
+    cartConnection.on("ProductDeleted", (productId) => {
+        console.log(`Product ${productId} updated!`);
+
+        // Find matching cart item
+        let hmessageBox = document.getElementById(`message-${productId}`);
+        if (hmessageBox) {
+            let notificationContainer = document.getElementById("cartNotifications");
+            let messageBox = document.createElement("div");
+            messageBox.className = "cart-message";
+            messageBox.innerHTML = `Product ${productId} has been deleted. <br> please refresh this page.`;
+
+            notificationContainer.appendChild(messageBox);
+
+            loadCartDb();
+            updateTotal();
+
+            // Auto-remove message after 5s
+            setTimeout(() => {
+                messageBox.remove();
+            }, 5000);
+        }
+    })
+
+        function loadCartDb() {
+            let localCart = JSON.parse(localStorage.getItem("cart")) || [];
+            renderCart(localCart, "local-cart", "local-empty");
+            fetch("/Cart/get-sync-with-db")
+                .then(response => response.json())
+                .then(data => {
+                    renderCart(data, "redisCart", "redis-empty");
+                    localStorage.setItem("redisCart", JSON.stringify(data));
+                });
+            updateTotal();
+        }
+
+</script>
+
+<!-- Basic cart logic-->
 <script>
     function loadCart() {
         let localCart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -143,7 +236,11 @@
                     onchange="updateQuantity(${index}, '${cartType}', this.value)">
             </div>
             <button class="remove-btn" onclick="removeItem(${index}, '${cartType}')">❌</button>
+            <div class="cart-message" id="message-${item.id}" style="display: none;">
+                This product has been updated! Price/availability may have changed.
+            </div>
         `;
+        updateTotal();
         return li;
     }
 
@@ -273,7 +370,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-        loadCart();
+        loadCartDb();
         updateTotal();
     });
     updateTotal();

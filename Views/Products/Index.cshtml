@@ -12,22 +12,24 @@
 @* </div> *@
 
 <div class="sort-container active">
-    <label for="sort">Sort by:</label>
-    <select id="sort" onchange="applySort()">
-        @foreach (var option in new List<(string Value, string Text)>
-        {
-        ("name_asc", "Name (A-Z)"),
-        ("name_desc", "Name (Z-A)"),
-        ("price_asc", "Price (Low to High)"),
-        ("price_desc", "Price (High to Low)"),
-        ("latest", "Newest First")
-        })
-        {
-            <option value="@option.Value" selected="@(Model.SortOption == option.Value ? "selected" : null)">
-                @option.Text
-            </option>
-        }
-    </select>
+    <fieldset class="active">
+        <legend for="sort">Sort by:</legend>
+        <select id="sort" onchange="applySort()">
+            @foreach (var option in new List<(string Value, string Text)>
+            {
+            ("name_asc", "Name (A-Z)"),
+            ("name_desc", "Name (Z-A)"),
+            ("price_asc", "Price (Low to High)"),
+            ("price_desc", "Price (High to Low)"),
+            ("latest", "Newest First")
+            })
+            {
+                <option value="@option.Value" selected="@(Model.SortOption == option.Value ? "selected" : null)">
+                    @option.Text
+                </option>
+            }
+        </select>
+    </fieldset>
 </div>
 
 
@@ -394,6 +396,25 @@ else
         const container = document.getElementById("productContainer");
         container.className = mode === 'grid' ? 'grid-view' : 'list-view';
     }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<!--Script for signalR-->
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/productHub")
+        .build();
+
+    connection.start()
+        .then(() => console.log("Connected to SignalR"))
+        .catch(err => console.error("SignalR connection failed:", err));
+
+    connection.on("ProductUpdated", () => {
+        console.log("Product updated! Refreshing list...");
+        location.reload(); // Reload the page when a product is updated
+    });
+
 </script>
 
 <!--script to edit products-->

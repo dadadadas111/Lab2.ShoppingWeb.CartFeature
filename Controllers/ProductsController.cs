@@ -1,10 +1,12 @@
 ﻿using Lab2.ShoppingWeb.CartFeature.Data;
 using Lab2.ShoppingWeb.CartFeature.Data.Interfaces;
 using Lab2.ShoppingWeb.CartFeature.Data.Repositories;
+using Lab2.ShoppingWeb.CartFeature.Hubs;
 using Lab2.ShoppingWeb.CartFeature.Models;
 using Lab2.ShoppingWeb.CartFeature.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lab2.ShoppingWeb.CartFeature.Controllers
@@ -94,10 +96,15 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] Product updatedProduct)
+        public async Task<IActionResult> UpdateProduct(
+            Guid id, 
+            [FromBody] Product updatedProduct,
+            [FromServices] IHubContext<ProductHub> hubContext)
         {
             var product = await productRepository.GetByIdAsync(id);
             if (product == null) return NotFound();
+
+            string reportMessage = GetReportMessage(product, updatedProduct);
 
             product.Name = updatedProduct.Name;
             product.Price = updatedProduct.Price;
@@ -106,19 +113,44 @@ namespace Lab2.ShoppingWeb.CartFeature.Controllers
 
             productRepository.Update(product);
             await productRepository.SaveChangesAsync();
+            await hubContext.Clients.All.SendAsync("ProductUpdated", product.Id, reportMessage);
             return Ok();
         }
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> DeleteProduct(Guid id)
+        public async Task<IActionResult> DeleteProduct(Guid id, [FromServices] IHubContext<ProductHub> hubContext)
         {
             var product = await productRepository.GetByIdAsync(id);
             if (product == null) return NotFound();
             productRepository.Delete(product);
             await productRepository.SaveChangesAsync();
+            await hubContext.Clients.All.SendAsync("ProductDeleted", product.Id);
             return Ok();
         }
 
+
+        private string GetReportMessage(Product product, Product updatedProduct)
+        {
+            // compare before/after updated product, and return a message to show in the report
+            string message = "A product in your cart has been updated. <br>You should refresh this page for best experience.<br>";
+            if (product.Name != updatedProduct.Name)
+            {
+                message += $"Name: {product.Name} -> {updatedProduct.Name}<br>";
+            }
+            if (product.Price != updatedProduct.Price)
+            {
+                message += $"Price: {product.Price} -> {updatedProduct.Price}<br>";
+            }
+            if (product.CategoryId != updatedProduct.CategoryId)
+            {
+                message += $"Category: {product.Category.Name} -> {updatedProduct.Category.Name}<br>";
+            }
+            if (product.SupplierId != updatedProduct.SupplierId)
+            {
+                message += $"Supplier: {product.Supplier.Name} -> {updatedProduct.Supplier.Name}<br>";
+            }
+            return message;
+        }
     }
 }
