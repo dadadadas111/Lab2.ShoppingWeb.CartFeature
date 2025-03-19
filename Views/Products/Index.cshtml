@@ -11,7 +11,7 @@
 @*     <button onclick="setViewMode('list')">List View</button> *@
 @* </div> *@
 
-<div class="sort-container">
+<div class="sort-container active">
     <label for="sort">Sort by:</label>
     <select id="sort" onchange="applySort()">
         @foreach (var option in new List<(string Value, string Text)>
@@ -109,46 +109,56 @@ else
 
 <div class="filters" id="filters">
     <!-- Category Filter -->
-    <div class="filter-section">
-        <h4 for="searchName">Search by Name:</h4>
-        <input type="text" id="searchName" placeholder="Search name..." value="@Model.SearchName" />
-        <h4 for="minPrice">Min Price:</h4>
-        <input type="number" id="minPrice" value="@Model.MinPrice" />
-        <h4 for="maxPrice">Max Price:</h4>
-        <input type="number" id="maxPrice" value="@Model.MaxPrice" />
-        <h4>Categories</h4>
-        <input type="text" class="filter-search" placeholder="Search categories..." onkeyup="filterCheckboxes('categoryFilter', this.value)" />
-        <div id="categoryFilter" class="checkbox-list">
-            @foreach (var category in Model.Categories)
-            {
-                // Check if category is selected
-                bool isChecked = Model.SelectedCategoryIds != null && Model.SelectedCategoryIds.Contains(category.Id.ToString());
+    <div class="filter-section active">
 
-                <label class="checkbox-label">
+        <fieldset class="active">
+            <legend for="searchName">Search</legend>
+            <input type="text" id="searchName" placeholder="Search name..." value="@Model.SearchName" />
+        </fieldset>
 
-                    <input checked=@isChecked type="checkbox" name="category" value="@category.Id" /> <span>@category.Name</span>
+        <fieldset class="active">
+            <legend>Price Range</legend>
+            <h4 for="minPrice">Min Price:</h4>
+            <input type="number" id="minPrice" value="@Model.MinPrice" />
+            <h4 for="maxPrice">Max Price:</h4>
+            <input type="number" id="maxPrice" value="@Model.MaxPrice" />
+        </fieldset>
 
-                </label>
-            }
-        </div>
-    </div>
+        <fieldset class="active">
+            <legend>Categories</legend>
+            <input type="text" class="filter-search" placeholder="Search categories..." onkeyup="filterCheckboxes('categoryFilter', this.value)" />
+            <div id="categoryFilter" class="checkbox-list">
+                @foreach (var category in Model.Categories)
+                {
+                    // Check if category is selected
+                    bool isChecked = Model.SelectedCategoryIds != null && Model.SelectedCategoryIds.Contains(category.Id.ToString());
 
-    <!-- Supplier Filter -->
-    <div class="filter-section">
-        <h4>Suppliers</h4>
-        <input type="text" class="filter-search" placeholder="Search suppliers..." onkeyup="filterCheckboxes('supplierFilter', this.value)" />
-        <div id="supplierFilter" class="checkbox-list">
-            @foreach (var supplier in Model.Suppliers)
-            {
-                // Check if supplier is selected
-                bool isChecked = Model.SelectedSupplierIds != null && Model.SelectedSupplierIds.Contains(supplier.Id.ToString());
-                <label class="checkbox-label">
+                    <label class="checkbox-label">
 
-                    <input checked=@isChecked type="checkbox" name="supplier" value="@supplier.Id" /> <span>@supplier.Name</span>
+                        <input checked=@isChecked type="checkbox" name="category" value="@category.Id" /> <span>@category.Name</span>
 
-                </label>
-            }
-        </div>
+                    </label>
+                }
+            </div>
+        </fieldset>
+
+        <fieldset class="active">
+            <legend>Suppliers</legend>
+            <input type="text" class="filter-search" placeholder="Search suppliers..." onkeyup="filterCheckboxes('supplierFilter', this.value)" />
+            <div id="supplierFilter" class="checkbox-list">
+                @foreach (var supplier in Model.Suppliers)
+                {
+                    // Check if supplier is selected
+                    bool isChecked = Model.SelectedSupplierIds != null && Model.SelectedSupplierIds.Contains(supplier.Id.ToString());
+                    <label class="checkbox-label">
+
+                        <input checked=@isChecked type="checkbox" name="supplier" value="@supplier.Id" /> <span>@supplier.Name</span>
+
+                    </label>
+                }
+            </div>
+        </fieldset>
+
     </div>
 
     <span>

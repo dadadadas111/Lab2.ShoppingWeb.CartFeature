@@ -13,12 +13,17 @@
     <link rel="stylesheet" href="https://matcha.mizu.sh/matcha.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
-<body class="layout-simple">
+<body class="layout-simple" data-color-scheme="dark">
     <header class="navbar"
+            data-color-scheme="dark"
             style="padding-bottom: 15px">
         <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Lab2</a>
 
         <div class="nav-actions">
+            <a class="color-scheme cart-btn" onclick="toggleTheme()">
+                <i class="fa-regular fa-sun light-mode " style="display:none"></i>
+                <i class="fa-regular fa-moon dark-mode "></i>
+            </a>
             <a asp-controller="Cart" asp-action="Index" class="cart-btn">
                 <i class="fas fa-shopping-cart"></i>
                 <span id="cart-count" class="cart-badge">0</span>
@@ -145,8 +150,8 @@
         #filters {
             margin-right: 20px;
             margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
+            padding: 5px;
+            /* border: 1px solid #ddd; */
         }
 
         .filter-section {
@@ -296,6 +301,41 @@
 
         // Listen for cart updates
         window.addEventListener("storage", updateCartCount);
+    </script>
+
+    <script>
+        // change html data-color-scheme to light/dark
+        // show/hide the icon in header
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.dataset.colorScheme || "light";
+            const newTheme = currentTheme === "light" ? "dark" : "light";
+            body.dataset.colorScheme = newTheme;
+            // set theme to local storage
+            localStorage.setItem("color-scheme", newTheme);
+            // Update the icon
+            const lightIcon = document.querySelector(".light-mode");
+            const darkIcon = document.querySelector(".dark-mode");
+            if (newTheme === "light") {
+                lightIcon.style.display = "block";
+                darkIcon.style.display = "none";
+            } else {
+                lightIcon.style.display = "none";
+                darkIcon.style.display = "block";
+            }
+        }
+
+        // Load theme from local storage
+        const savedTheme = localStorage.getItem("color-scheme");
+        if (savedTheme) {
+            document.body.dataset.colorScheme = savedTheme;
+            if (savedTheme === "dark") {
+                const lightIcon = document.querySelector(".light-mode");
+                const darkIcon = document.querySelector(".dark-mode");
+                lightIcon.style.display = "none";
+                darkIcon.style.display = "block";
+            }
+        }
     </script>
 
     <!-- Firebase SDK (Use module-based imports) -->
