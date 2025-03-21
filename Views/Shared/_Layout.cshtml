@@ -286,7 +286,6 @@
                 fetch("/Cart/get")
                 .then(response => response.json())
                 .then(data => {
-                    console.log("Redis cart 12312:", data);
                     const length = data.length === 0 ? totalItems : data.length;
                     document.getElementById("cart-count").innerText = length;
                     // save to local storage

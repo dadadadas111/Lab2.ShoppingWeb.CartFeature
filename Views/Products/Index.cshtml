@@ -32,23 +32,26 @@
     </fieldset>
 </div>
 
+@if (Model.Products.Count() != 0)
+{
+    <div class="pagination-container">
+        <button onclick="changePage(1)" @(Model.CurrentPage == 1 ? "disabled" : "")>&laquo; First</button>
+        <button onclick="changePage(@(Model.CurrentPage - 1))" @(Model.CurrentPage == 1 ? "disabled" : "")>‹ Prev</button>
 
-<div class="pagination-container">
-    <button onclick="changePage(1)" @(Model.CurrentPage == 1 ? "disabled" : "")>&laquo; First</button>
-    <button onclick="changePage(@(Model.CurrentPage - 1))" @(Model.CurrentPage == 1 ? "disabled" : "")>‹ Prev</button>
+        @for (int i = Math.Max(1, Model.CurrentPage - 1); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 1); i++)
+        {
+            <button class="page-btn @(i == Model.CurrentPage ? "active" : "")" onclick="changePage(@i)">
+                @i
+            </button>
+        }
 
-    @for (int i = Math.Max(1, Model.CurrentPage - 1); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 1); i++)
-    {
-        <button class="page-btn @(i == Model.CurrentPage ? "active" : "")" onclick="changePage(@i)">
-            @i
-        </button>
-    }
+        <button onclick="changePage(@(Model.CurrentPage + 1))" @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")>Next ›</button>
+        <button onclick="changePage(@Model.TotalPages)" @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")>Last &raquo;</button>
 
-    <button onclick="changePage(@(Model.CurrentPage + 1))" @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")>Next ›</button>
-    <button onclick="changePage(@Model.TotalPages)" @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")>Last &raquo;</button>
+        <p>Page @Model.CurrentPage of @Model.TotalPages</p>
+    </div>
+}
 
-    <p>Page @Model.CurrentPage of @Model.TotalPages</p>
-</div>
 
 <!-- Products Container -->
 <div id="productContainer" class="grid-view">
@@ -108,8 +111,8 @@ else
             </button>
         }
 
-        <button onclick="changePage(@(Model.CurrentPage + 1))" @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")>Next ›</button>
-        <button onclick="changePage(@Model.TotalPages)" @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")>Last &raquo;</button>
+        <button onclick="changePage(@(Model.CurrentPage + 1))" @(Model.CurrentPage >= Model.TotalPages || Model.Products.Count() == 0 ? "disabled" : "")>Next ›</button>
+        <button onclick="changePage(@Model.TotalPages)" @(Model.CurrentPage >= Model.TotalPages || Model.Products.Count() == 0 ? "disabled" : "")>Last &raquo;</button>
 
         <p>Page @Model.CurrentPage of @Model.TotalPages</p>
     </div>
@@ -451,7 +454,7 @@ else
             });
 
             if (response.ok) {
-                alert("Product updated successfully!");
+                // alert("Product updated successfully!");
                 window.location.reload(); // Reload page after update
             } else {
                 alert("Failed to update product.");
@@ -476,7 +479,7 @@ else
             });
 
             if (response.ok) {
-                alert("Product deleted successfully!");
+                // alert("Product deleted successfully!");
                 window.location.reload(); // Reload page after delete
             } else {
                 alert("Failed to delete product.");

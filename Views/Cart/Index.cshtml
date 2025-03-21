@@ -168,7 +168,6 @@
             notificationContainer.appendChild(messageBox);
 
             loadCartDb();
-            updateTotal();
 
             // Auto-remove message after 5s
             setTimeout(() => {
@@ -185,8 +184,8 @@
                 .then(data => {
                     renderCart(data, "redisCart", "redis-empty");
                     localStorage.setItem("redisCart", JSON.stringify(data));
-                });
-            updateTotal();
+                    updateTotal();
+                })
         }
 
 </script>
@@ -207,7 +206,6 @@
 
     function renderCart(cart, listId, emptyMsgId) {
         try {
-            console.log("listId:", listId);
             let cartList = document.getElementById(listId);
             cartList.innerHTML = "";
                 cart.forEach((item, index) => {
@@ -279,6 +277,7 @@
                 total += cart[index].price * cart[index].quantity;
             }
         });
+        console.log("Total Price:", total);
         document.getElementById("total-price").textContent = total.toFixed(2);
         updateCartCount();
     }
@@ -361,9 +360,6 @@
                     loadCart();
                 });
         }
-
-        console.log("source" , sourceCartType);
-        console.log("target" , targetCartType);
 
        // loadCart();
        // updateTotal();
